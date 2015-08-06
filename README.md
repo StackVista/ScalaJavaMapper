@@ -1,18 +1,7 @@
-scala-macro-template
-====================
+ScalaJavaMapper
+===============
 
-Template for getting up and running with macros in no time.
-
-Scala macros must be compiled separately from the code that uses it. This
-template contains a subproject for writing macros that the main project then
-depends upon.
-
-The build file is based on the one found in the SBT docs here:
-http://www.scala-sbt.org/0.13.0/docs/Detailed-Topics/Macro-Projects.html
-
-To compile and run everything, simply use `sbt run`.
-
-Uses scala 2.11.2 without Macro Paradise. Tested with sbt 0.13.0.
-
-There is an example on the branch `complete-example`:
-https://github.com/echojc/scala-macro-template/tree/complete-example
+Mapper to convert Scala case classes from/to Java mutable classes (i.e. with getters and setters for the properties). 
+A scala converter type class can be generated via a macro to create a Converter for each combination of case class 
+and Java class. It is expected and validated that all the case class fields can be mapped to the Java object, there 
+is no such expectation or validation the other way around.

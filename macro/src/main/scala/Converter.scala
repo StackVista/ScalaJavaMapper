@@ -1,5 +1,7 @@
 package com.stackstate.objectmapper.macros
 
+import java.util
+
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox.Context
@@ -33,8 +35,19 @@ object Converter extends LowerImplicits {
   implicit def seqToListConverter[T, J](implicit converter: Converter[T, J]) = new Converter[Seq[T], java.util.List[J]] {
     import scala.collection.JavaConversions
 
-    def toJava(list: Seq[T]): java.util.List[J] = JavaConversions.seqAsJavaList(list.map(Converter.toJava[T, J]))
-    def fromJava(list: java.util.List[J]): Seq[T] = JavaConversions.asScalaBuffer(list).toVector.map(Converter.fromJava[T, J])
+    // Make sure that a copy is made of the lists instead of wrapping the existing list
+    def toJava(list: Seq[T]): java.util.List[J] = new java.util.ArrayList(JavaConversions.seqAsJavaList(list.map(Converter.toJava[T, J])))
+
+    def fromJava(list: java.util.List[J]): Seq[T] = {
+      JavaConversions.asScalaIterator(list.iterator()).map(Converter.fromJava[T, J]).toVector
+    }
+  }
+
+  implicit def setToSetConverter[T, J](implicit converter: Converter[T, J]) = new Converter[Set[T], java.util.Set[J]] {
+    import scala.collection.JavaConversions
+
+    def toJava(set: Set[T]): java.util.Set[J] = new java.util.HashSet(JavaConversions.setAsJavaSet(set.map(Converter.toJava[T, J])))
+    def fromJava(set: java.util.Set[J]): Set[T] = JavaConversions.asScalaIterator(set.iterator()).map(Converter.fromJava[T, J]).toSet
   }
 
   implicit def optionToTypeConverter[T, J](implicit converter: Converter[T, J]) = new Converter[Option[T], J] {
