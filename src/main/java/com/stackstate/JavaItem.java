@@ -38,4 +38,14 @@ public class JavaItem {
   public void setPerson(JavaPerson person) {
     this.person = person;
   }
+
+  @Override
+  public String toString() {
+    return "JavaItem{" +
+      "name='" + name + '\'' +
+      ", price=" + price +
+      ", list=" + list +
+      ", person=" + person +
+      '}';
+  }
 }

@@ -15,20 +15,31 @@ trait FromJava[T, J] {
 @implicitNotFound("Required Converter from scala type ${T} to java type ${J} not found.")
 trait Converter[T, J] extends ToJava[T, J] with FromJava[T, J]
 
-object Converter {
+trait LowerImplicits {
 
-  implicit def baseTypesConverter[AnyVal] = new Converter[AnyVal, AnyVal] {
-    def toJava(s: AnyVal) = s
-    def fromJava(j: AnyVal) = j
+}
+
+object Converter extends LowerImplicits {
+  implicit def baseTypesConverter[T <: Any] = new Converter[T, T] {
+    def toJava(s: T) = s
+    def fromJava(j: T) = j
   }
 
-  implicit def seqToListConverter[T] = new Converter[Seq[T], java.util.List[T]] {
-    def toJava(list: Seq[T]): java.util.List[T] = {
-      ???
-    }
-    def fromJava(list: java.util.List[T]): Seq[T] = {
-      ???
-    }
+  implicit def baseNumberTypesConverter[T <: AnyVal, J <: Number] = new Converter[T, J] {
+    def toJava(s: T) = s.asInstanceOf[J]
+    def fromJava(j: J) = j.asInstanceOf[T]
+  }
+
+  implicit def seqToListConverter[T, J](implicit converter: Converter[T, J]) = new Converter[Seq[T], java.util.List[J]] {
+    import scala.collection.JavaConversions
+
+    def toJava(list: Seq[T]): java.util.List[J] = JavaConversions.seqAsJavaList(list.map(Converter.toJava[T, J]))
+    def fromJava(list: java.util.List[J]): Seq[T] = JavaConversions.asScalaBuffer(list).toVector.map(Converter.fromJava[T, J])
+  }
+
+  implicit def optionToTypeConverter[T, J](implicit converter: Converter[T, J]) = new Converter[Option[T], J] {
+    def toJava(option: Option[T]): J = option.map(Converter.toJava[T, J]).getOrElse(null.asInstanceOf[J])
+    def fromJava(value: J): Option[T] = Option(value).map(Converter.fromJava[T, J])
   }
 
   def toJava[T, J](t: T)(implicit converter: Converter[T, J]): J = converter.toJava(t)
@@ -51,8 +62,6 @@ object Converter {
       val decoded = name.decodedName.toString
       val scalaFieldType = tpe.decl(name).typeSignature
 
-      //TODO: Validate types and throw an error when option is None
-      //TODO: Use Converter to convert types in this type
       val setterName = s"set${decoded.capitalize}"
       val javaSetter = tpj.members.find(_.asTerm.name.decodedName.toString == setterName).getOrElse(
         c.abort(c.enclosingPosition, s"Setter $setterName not found on ${tpj.typeSymbol.name}.")
