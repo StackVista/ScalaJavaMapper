@@ -3,6 +3,8 @@ package com.stackstate.scalajavamapper
 import org.scalatest._
 
 class MacroTest extends WordSpecLike with Matchers {
+  import Converters._
+
   case class Person(name: String, age: Option[Int], set: Set[String])
   case class Item(name: String, price: Double, list: Seq[String], person: Person)
 
@@ -11,7 +13,7 @@ class MacroTest extends WordSpecLike with Matchers {
       implicit val personConverter = Converter.converter[Person, JavaPerson]
       implicit val itemConverter = Converter.converter[Item, JavaItem]
 
-      val inItem = Item("String", 1.0, List("a", "b"), Person("henk", Some(10), Set("d", "e", "f")))
+      val inItem = Item("String", 1.0, List("a", "b"), Person("John", Some(10), Set("d", "e", "f")))
 
       val javaItem = Converter.toJava[Item, JavaItem](inItem)
       inItem.name === javaItem.getName
@@ -20,11 +22,9 @@ class MacroTest extends WordSpecLike with Matchers {
       inItem.person.name === javaItem.getPerson.getName
       inItem.person.age.get === javaItem.getPerson.getAge
       inItem.person.set should contain theSameElementsAs Set("d", "e", "f")
-      println(s"Java : $javaItem")
 
       val newItem = Converter.fromJava[Item, JavaItem](javaItem)
-      inItem === newItem;
-      println(s"Scala after roundtrip: $newItem")
+      inItem === newItem
     }
   }
 }
