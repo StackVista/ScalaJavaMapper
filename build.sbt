@@ -5,6 +5,13 @@ val scalaSettings = Seq(
   scalaVersion := "2.11.7"
 )
 
+val dependencies = {
+  libraryDependencies ++= Seq(
+    "org.scala-lang"            % "scala-compiler"           % scalaVersion.value,
+    "org.scalatest"            %%  "scalatest"               % "2.2.4"      % "test"
+  )
+}
+
 val scalariform = scalariformSettings :+
   (ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(AlignSingleLineCaseStatements, true)
@@ -14,13 +21,9 @@ val scalariform = scalariformSettings :+
     .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
   )
 
-lazy val macro = project.in(file("macro"))
-  .settings(scalaSettings:_*)
-  .settings(libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value)
-  .settings(scalariform)
-
-lazy val root = project.in(file(".")).dependsOn(macro)
+lazy val root = project.in(file("."))
   .settings(scalaSettings:_*)
   .settings(scalariform)
+  .settings(dependencies)
   .settings(compileOrder := CompileOrder.Mixed)
 

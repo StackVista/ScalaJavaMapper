@@ -1,6 +1,4 @@
-package com.stackstate.objectmapper.macros
-
-import java.util
+package com.stackstate.scalajavamapper
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
@@ -93,8 +91,8 @@ object Converter extends LowerImplicits {
       val javaGetterName = javaGetter.asTerm.name
       val javaGetterType = javaGetter.typeSignature.resultType
 
-      (q"""javaObj.$javaSetterName(com.stackstate.objectmapper.macros.Converter.toJava[$scalaFieldType, $javaSetterType](t.$name))""",
-        q"""com.stackstate.objectmapper.macros.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)""")
+      (q"""javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$name))""",
+        q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)""")
     }.unzip
 
     val setJavaFields = toJavaStatements.foldLeft(q"")((acc, next) => q"..$acc; $next")

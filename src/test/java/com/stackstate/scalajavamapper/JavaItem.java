@@ -1,4 +1,4 @@
-package com.stackstate;
+package com.stackstate.scalajavamapper;
 import java.util.List;
 
 public class JavaItem {

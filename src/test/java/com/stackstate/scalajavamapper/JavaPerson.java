@@ -1,8 +1,11 @@
-package com.stackstate;
+package com.stackstate.scalajavamapper;
+
+import java.util.Set;
 
 public class JavaPerson {
   private String name;
   private Integer age;
+  private Set<String> set;
 
   public String getName() {
     return this.name;
@@ -27,5 +30,13 @@ public class JavaPerson {
       "name='" + name + '\'' +
       ", age=" + age +
       '}';
+  }
+
+  public Set<String> getSet() {
+    return set;
+  }
+
+  public void setSet(Set<String> set) {
+    this.set = set;
   }
 }
