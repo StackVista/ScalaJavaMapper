@@ -28,7 +28,6 @@ val scalariform = scalariformSettings :+
   )
 
 lazy val root = project.in(file("."))
-  .settings(projectSettings:_*)
   .settings(scalaSettings:_*)
   .settings(scalariform)
   .settings(dependencies)
