@@ -1,5 +1,7 @@
 package com.stackstate.scalajavamapper
 
+import com.stackstate.scalajavamapper.conversionmacros.ConverterMacro
+
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
 
@@ -19,5 +21,5 @@ object Converter {
   def toJava[T, J](t: T)(implicit converter: JavaWriter[T, J]): J = converter.write(t)
   def fromJava[T, J](j: J)(implicit converter: JavaReader[T, J]): T = converter.read(j)
 
-  def converter[T, J]: Converter[T, J] = macro ConverterMacro.converter[T, J]
+  def converter[T, J](customFieldMapping: (String, String)*): Converter[T, J] = macro ConverterMacro.converter[T, J]
 }
