@@ -11,6 +11,11 @@ trait Converters {
     def read(j: J) = j.asInstanceOf[T]
   }
 
+  implicit val booleanTypesConverter = new Converter[Boolean, java.lang.Boolean] {
+    def write(s: Boolean) = s.asInstanceOf[java.lang.Boolean]
+    def read(j: java.lang.Boolean) = j.asInstanceOf[Boolean]
+  }
+
   implicit def seqToListConverter[T, J](implicit converter: Converter[T, J]) = new Converter[Seq[T], java.util.List[J]] {
     import scala.collection.JavaConversions
 
