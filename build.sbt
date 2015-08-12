@@ -8,7 +8,7 @@ val scalaSettings = Seq(
 val projectSettings = Seq(
   name := "scala-java-mapper",
   organization := "com.stackstate",
-  version := "0.0.1-SNAPSHOT"
+  version := "0.0.2-SNAPSHOT"
 )
 
 val dependencies = {
@@ -28,6 +28,7 @@ val scalariform = scalariformSettings :+
   )
 
 lazy val root = project.in(file("."))
+  .settings(projectSettings:_*)
   .settings(scalaSettings:_*)
   .settings(scalariform)
   .settings(dependencies)
