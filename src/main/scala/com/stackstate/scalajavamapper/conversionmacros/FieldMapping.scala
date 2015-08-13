@@ -1,10 +1,12 @@
 package com.stackstate.scalajavamapper.conversionmacros
 
+import com.stackstate.scalajavamapper.CustomFieldConverter
+
 import scala.reflect.macros.whitebox.Context
 
 object FieldMapping {
 
-  def apply(c: Context)(customFieldMapping: Seq[c.Expr[(String, String)]]): FieldMapping = {
+  def apply(c: Context)(customFieldMapping: Seq[c.Expr[(String, CustomFieldConverter)]]): FieldMapping = {
     import c.universe._
     def getConstantValue(nameTree: c.Tree): String = {
       nameTree match {

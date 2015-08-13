@@ -1,6 +1,7 @@
 package com.stackstate.scalajavamapper
 
 import org.scalatest._
+import CustomFieldConverter._
 
 class MacroTest extends WordSpecLike with Matchers {
   import Converters._
@@ -9,6 +10,7 @@ class MacroTest extends WordSpecLike with Matchers {
   case class OtherPerson(fullName: String, age1: Int, settings: Set[String])
 
   case class Item(name: String, price: Double, list: Seq[String], person: Person)
+  case class Light(statusValue: String)
 
   "The converter macro" should {
     "convert a case class to a Java object" in {
@@ -30,7 +32,7 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert and map field names to other field names if provided" in {
-      implicit val personConverter = Converter.converter[OtherPerson, JavaPerson]("fullName" -> "name", "age1" -> "age", "settings" -> "set")
+      implicit val personConverter = Converter.converter[OtherPerson, JavaPerson]("fullName" -> convert("name"), "age1" -> convert("age"), "settings" -> convert("set"))()
 
       val inPerson = OtherPerson("John", 10, Set("d", "e", "f"))
 
@@ -42,5 +44,24 @@ class MacroTest extends WordSpecLike with Matchers {
       val newOtherPerson = Converter.fromJava[OtherPerson, JavaPerson](javaPerson)
       inPerson == newOtherPerson
     }
+
+    "convert nested properties" in {
+      val statusConverter = new JavaReader[String, JavaInnerStatus] {
+        override def read(j: JavaInnerStatus): String = j.getValue
+      }
+
+      implicit val lightConverter = Converter.converter[Light, JavaLight]()
+
+      val light = Light("green")
+
+      val javaLight: JavaLight = Converter.toJava[Light, JavaLight](light)
+
+      javaLight.getStatus.getValue === light.statusValue
+    }
   }
+
 }
+
+//implicit val personConverter = Converter.converter[OtherPerson, JavaPerson]("fullName" -> "name", "age1" -> "age", "settings" -> "set")
+//("statusValue" -> convert("status", statusConverter))
+//  convert("status", statusConverter)
