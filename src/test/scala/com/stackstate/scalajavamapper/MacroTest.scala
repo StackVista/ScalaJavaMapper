@@ -1,7 +1,6 @@
 package com.stackstate.scalajavamapper
 
 import org.scalatest._
-import CustomFieldConverter._
 
 class MacroTest extends WordSpecLike with Matchers {
   import Converters._
@@ -32,7 +31,7 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert and map field names to other field names if provided" in {
-      implicit val personConverter = Converter.converter[OtherPerson, JavaPerson]("fullName" -> convert("name"), "age1" -> convert("age"), "settings" -> convert("set"))()
+      implicit val personConverter = Converter.converter[OtherPerson, JavaPerson]("fullName" -> "name", "age1" -> "age", "settings" -> "set")
 
       val inPerson = OtherPerson("John", 10, Set("d", "e", "f"))
 
