@@ -3,6 +3,7 @@ import scalariform.formatter.preferences._
 
 val scalaSettings = Seq(
   scalaVersion := "2.11.7"
+  //, scalacOptions += "-Ymacro-debug-lite"
 )
 
 val projectSettings = Seq(

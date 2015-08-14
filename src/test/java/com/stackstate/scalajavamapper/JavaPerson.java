@@ -4,7 +4,7 @@ import java.util.Set;
 
 
 abstract class BaseClass {
-  private String name;
+  private String name = "default-name";
 
   public String getName() {
     return name;
@@ -26,6 +26,12 @@ public class JavaPerson extends BaseClass {
       "name='" + super.getName() + '\'' +
       ", age=" + age +
       '}';
+  }
+
+  public JavaPerson() {}
+
+  public JavaPerson(String name) {
+    this.setName(name);
   }
 
   public Set<String> getSet() {

@@ -4,7 +4,7 @@ package conversionmacros
 import scala.reflect.macros.whitebox.Context
 
 object ConverterMacro {
-  def converter[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context)(customFieldMapping: c.Expr[(String, String)]*): c.Expr[Converter[T, J]] = {
+  def converter[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context)(customFieldMapping: c.Expr[(String, String)]*)(customFieldConverters: c.Expr[(String, CustomFieldConverter[_, _])]*): c.Expr[Converter[T, J]] = {
     import c.universe._
     val tpeCaseClass = weakTypeOf[T]
     val tpeJavaClass = weakTypeOf[J]
@@ -15,24 +15,46 @@ object ConverterMacro {
       c.abort(c.enclosingPosition, s"No companion companion object found for case class ${tpeCaseClass}")
     }
 
+    val customConvertersMapping = CustomConverterMapping.createMapping(c)(customFieldConverters)
+
+    val converterFields = customConvertersMapping.map {
+      case (name, converter: c.universe.Tree) =>
+        val converterName = TermName(s"${name}Converter")
+        q"""val $converterName = $converter"""
+    }
+
     val (toJavaStatements, fromJavaParams) = scalaFields(c)(tpeCaseClass).map {
       case (scalaFieldName, decodedFieldName, scalaFieldType) ⇒
 
         val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
         val (javaGetterName, javaGetterType) = fieldMapping.javaGetter(c)(tpeJavaClass, decodedFieldName)
 
-        (q"""javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName))""",
-          q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)""")
+        customConvertersMapping.get(decodedFieldName).map { converter =>
+          val converterName = TermName(s"${decodedFieldName}Converter")
+          val toJavaStatement: Tree =
+            q"""
+                this.$converterName.writer.foreach(writer =>
+                  javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName)(writer))
+                )
+              """
+          val fromJavaExpression: Tree = q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)(this.$converterName.reader)"""
+          (toJavaStatement, fromJavaExpression)
+        }.getOrElse {
+          val toJavaStatement: Tree =
+            q"""javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName))"""
+          val fromJavaExpression: Tree = q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)"""
+          (toJavaStatement, fromJavaExpression)
+        }
     }.unzip
-
-    val setJavaFields = toStatements(c)(toJavaStatements)
 
     c.Expr[Converter[T, J]] {
       q"""
         new Converter[$tpeCaseClass, $tpeJavaClass] {
+          ..$converterFields
+
           def write(t: $tpeCaseClass): $tpeJavaClass = {
             val javaObj = new $tpeJavaClass()
-            $setJavaFields
+            ..$toJavaStatements
             javaObj
           }
 
@@ -40,11 +62,6 @@ object ConverterMacro {
         }
       """
     }
-  }
-
-  private def toStatements(c: Context)(toJavaStatements: List[c.universe.Tree]): c.universe.Tree = {
-    import c.universe._
-    toJavaStatements.foldLeft(q"")((acc, next) => q"..$acc; $next")
   }
 
   private def scalaFields(c: Context)(tpeCaseClass: c.universe.Type): List[(c.universe.TermName, String, c.universe.Type)] = {

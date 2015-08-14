@@ -4,19 +4,20 @@ import org.scalatest._
 
 class MacroTest extends WordSpecLike with Matchers {
   import Converters._
+  import Converter._
 
   case class Person(name: String, age: Option[Int], set: Set[String])
   case class OtherPerson(fullName: String, age1: Int, settings: Set[String])
 
   case class Item(name: String, price: Double, list: Seq[String], person: Person)
-  case class Light(statusValue: String)
+  case class ItemSimple(person: String)
+
+  val inItem = Item("String", 1.0, List("a", "b"), Person("John", Some(10), Set("d", "e", "f")))
 
   "The converter macro" should {
     "convert a case class to a Java object" in {
-      implicit val personConverter = Converter.converter[Person, JavaPerson]()
-      implicit val itemConverter = Converter.converter[Item, JavaItem]()
-
-      val inItem = Item("String", 1.0, List("a", "b"), Person("John", Some(10), Set("d", "e", "f")))
+      implicit val personConverter = converter[Person, JavaPerson]()()
+      implicit val itemConverter = converter[Item, JavaItem]()()
 
       val javaItem = Converter.toJava[Item, JavaItem](inItem)
       inItem.name === javaItem.getName
@@ -31,7 +32,9 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert and map field names to other field names if provided" in {
-      implicit val personConverter = Converter.converter[OtherPerson, JavaPerson]("fullName" -> "name", "age1" -> "age", "settings" -> "set")
+      implicit val personConverter = Converter.converter[OtherPerson, JavaPerson](
+        "fullName" -> "name", "age1" -> "age", "settings" -> "set"
+      )()
 
       val inPerson = OtherPerson("John", 10, Set("d", "e", "f"))
 
@@ -44,23 +47,36 @@ class MacroTest extends WordSpecLike with Matchers {
       inPerson == newOtherPerson
     }
 
-    "convert nested properties" in {
-      val statusConverter = new JavaReader[String, JavaInnerStatus] {
-        override def read(j: JavaInnerStatus): String = j.getValue
-      }
+    "convert nested properties with the specified custom converters" in {
+      implicit val personConverter = Converter.converter[Person, JavaPerson]()()
+      implicit val itemConverter = Converter.converter[Item, JavaItem]()()
+      val javaItem = Converter.toJava[Item, JavaItem](inItem)
 
-      implicit val lightConverter = Converter.converter[Light, JavaLight]()
+      implicit val simpleItemConverter = Converter.converter[ItemSimple, JavaItem]()(
+        "person" -> customField[String, JavaPerson](_.getName, new JavaPerson(_))
+      )
 
-      val light = Light("green")
+      val simpleItem = fromJava[ItemSimple, JavaItem](javaItem)
+      simpleItem.person === inItem.person.name
 
-      val javaLight: JavaLight = Converter.toJava[Light, JavaLight](light)
+      val newJavaItem = toJava[ItemSimple, JavaItem](simpleItem)
+      newJavaItem.getPerson.getName === inItem.person.name
+    }
 
-      javaLight.getStatus.getValue === light.statusValue
+    "convert nested properties with the specified readonly converter" in {
+      implicit val personConverter = Converter.converter[Person, JavaPerson]()()
+      implicit val itemConverter = Converter.converter[Item, JavaItem]()()
+      val javaItem = Converter.toJava[Item, JavaItem](inItem)
+
+      implicit val simpleItemConverter = Converter.converter[ItemSimple, JavaItem]()(
+        "person" -> readonlyField((_: JavaPerson).getName)
+      )
+
+      val simpleItem = fromJava[ItemSimple, JavaItem](javaItem)
+      simpleItem.person === inItem.person.name
+
+      val newJavaItem = toJava[ItemSimple, JavaItem](simpleItem)
+      newJavaItem.getPerson.getName === "default-name"
     }
   }
-
 }
-
-//implicit val personConverter = Converter.converter[OtherPerson, JavaPerson]("fullName" -> "name", "age1" -> "age", "settings" -> "set")
-//("statusValue" -> convert("status", statusConverter))
-//  convert("status", statusConverter)

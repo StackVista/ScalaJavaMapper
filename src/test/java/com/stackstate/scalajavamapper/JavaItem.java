@@ -5,7 +5,7 @@ public class JavaItem {
   private String name;
   private double price;
   private List<String> list;
-  private JavaPerson person;
+  private JavaPerson person = new JavaPerson();
 
   public String getName() {
     return name;
