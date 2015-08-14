@@ -50,3 +50,4 @@ public class JavaPerson extends BaseClass {
     this.age = age;
   }
 }
+

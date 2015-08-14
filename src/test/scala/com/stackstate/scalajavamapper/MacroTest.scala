@@ -1,5 +1,6 @@
 package com.stackstate.scalajavamapper
 
+import com.stackstate.scalajavamapper.property.{ JavaProperty, JavaComponent }
 import org.scalatest._
 
 class MacroTest extends WordSpecLike with Matchers {
@@ -7,10 +8,14 @@ class MacroTest extends WordSpecLike with Matchers {
   import Converter._
 
   case class Person(name: String, age: Option[Int], set: Set[String])
+  case class PersonSimple(age: Int)
   case class OtherPerson(fullName: String, age1: Int, settings: Set[String])
 
   case class Item(name: String, price: Double, list: Seq[String], person: Person)
   case class ItemSimple(person: String)
+
+  case class Property(name: String)
+  case class Component(property: Property)
 
   val inItem = Item("String", 1.0, List("a", "b"), Person("John", Some(10), Set("d", "e", "f")))
 
@@ -53,7 +58,7 @@ class MacroTest extends WordSpecLike with Matchers {
       val javaItem = Converter.toJava[Item, JavaItem](inItem)
 
       implicit val simpleItemConverter = Converter.converter[ItemSimple, JavaItem]()(
-        "person" -> customField[String, JavaPerson](_.getName, personName => new JavaPerson(personName))
+        "person" -> readWriterField[String, JavaPerson](_.getName, personName => new JavaPerson(personName))
       )
 
       val simpleItem = fromJava[ItemSimple, JavaItem](javaItem)
@@ -69,7 +74,7 @@ class MacroTest extends WordSpecLike with Matchers {
       val javaItem = Converter.toJava[Item, JavaItem](inItem)
 
       implicit val simpleItemConverter = Converter.converter[ItemSimple, JavaItem]()(
-        "person" -> readonlyField((_: JavaPerson).getName)
+        "person" -> readOnlyField((_: JavaPerson).getName)
       )
 
       val simpleItem = fromJava[ItemSimple, JavaItem](javaItem)
@@ -77,6 +82,21 @@ class MacroTest extends WordSpecLike with Matchers {
 
       val newJavaItem = toJava[ItemSimple, JavaItem](simpleItem)
       newJavaItem.getPerson.getName === "default-name"
+    }
+
+    "convert readonly properties without setter converter" in {
+      implicit val personConverter = Converter.converter[PersonSimple, JavaPersonSimple]()("age" -> readOnlyField[Int, Integer](_.asInstanceOf[Integer]))
+
+      val dto = PersonSimple(0)
+      val domain = toJava[PersonSimple, JavaPersonSimple](dto)
+      domain.getAge === 1
+
+      val returnDto = fromJava[PersonSimple, JavaPersonSimple](domain)
+      returnDto.age === 1
+    }
+
+    "convert base class with generic type" in {
+
     }
   }
 }

@@ -28,12 +28,15 @@ object JavaWriter {
 @implicitNotFound("Required Converter from scala type ${T} to java type ${J} not found.")
 trait Converter[T, J] extends JavaWriter[T, J] with JavaReader[T, J]
 
-case class CustomFieldConverter[T, J](reader: JavaReader[T, J], writer: Option[JavaWriter[T, J]])
+trait CustomFieldConverter[T, J]
+
+case class CustomFieldReaderOnly[T, J](reader: JavaReader[T, J]) extends CustomFieldConverter[T, J]
+case class CustomFieldReadWriter[T, J](reader: JavaReader[T, J], writer: JavaWriter[T, J]) extends CustomFieldConverter[T, J]
 
 object Converter {
 
-  def customField[T, J](read: J => T, write: T => J): CustomFieldConverter[T, J] = CustomFieldConverter[T, J](JavaReader(read), Some(JavaWriter(write)))
-  def readonlyField[T, J](read: J => T): CustomFieldConverter[T, J] = CustomFieldConverter[T, J](JavaReader(read), None)
+  def readOnlyField[T, J](read: J => T): CustomFieldReaderOnly[T, J] = CustomFieldReaderOnly[T, J](JavaReader(read))
+  def readWriterField[T, J](read: J => T, write: T => J): CustomFieldReadWriter[T, J] = CustomFieldReadWriter[T, J](JavaReader(read), JavaWriter(write))
 
   def toJava[T, J](t: T)(implicit converter: JavaWriter[T, J]): J = converter.write(t)
   def fromJava[T, J](j: J)(implicit converter: JavaReader[T, J]): T = converter.read(j)

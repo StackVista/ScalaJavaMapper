@@ -26,20 +26,24 @@ object ConverterMacro {
     val (toJavaStatements, fromJavaParams) = scalaFields(c)(tpeCaseClass).map {
       case (scalaFieldName, decodedFieldName, scalaFieldType) ⇒
 
-        val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
         val (javaGetterName, javaGetterType) = fieldMapping.javaGetter(c)(tpeJavaClass, decodedFieldName)
 
         customConvertersMapping.get(decodedFieldName).map { converter =>
           val converterName = TermName(s"${decodedFieldName}Converter")
+
           val toJavaStatement: Tree =
-            q"""
+            if (converter.tpe.typeSymbol.name.toString == CustomFieldReadWriter.getClass.getSimpleName) {
+              val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
+              q"""
                 this.$converterName.writer.foreach(writer =>
                   javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName)(writer))
                 )
               """
+            } else q""
           val fromJavaExpression: Tree = q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)(this.$converterName.reader)"""
           (toJavaStatement, fromJavaExpression)
         }.getOrElse {
+          val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
           val toJavaStatement: Tree =
             q"""javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName))"""
           val fromJavaExpression: Tree = q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)"""
