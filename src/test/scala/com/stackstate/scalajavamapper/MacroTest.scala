@@ -53,7 +53,7 @@ class MacroTest extends WordSpecLike with Matchers {
       val javaItem = Converter.toJava[Item, JavaItem](inItem)
 
       implicit val simpleItemConverter = Converter.converter[ItemSimple, JavaItem]()(
-        "person" -> customField[String, JavaPerson](_.getName, new JavaPerson(_))
+        "person" -> customField[String, JavaPerson](_.getName, personName => new JavaPerson(personName))
       )
 
       val simpleItem = fromJava[ItemSimple, JavaItem](javaItem)
