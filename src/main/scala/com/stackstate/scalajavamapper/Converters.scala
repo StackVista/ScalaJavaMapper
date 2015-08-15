@@ -20,18 +20,28 @@ trait Converters {
     import scala.collection.JavaConversions
 
     // Make sure that a copy is made of the lists instead of wrapping the existing list
-    def write(list: Seq[T]): java.util.List[J] = new java.util.ArrayList(JavaConversions.seqAsJavaList(list.map(Converter.toJava[T, J])))
+    def write(list: Seq[T]): java.util.List[J] = {
+      if (list == null) null
+      else new java.util.ArrayList(JavaConversions.seqAsJavaList(list.map(Converter.toJava[T, J])))
+    }
 
     def read(list: java.util.List[J]): Seq[T] = {
-      JavaConversions.asScalaIterator(list.iterator()).map(Converter.fromJava[T, J]).toVector
+      if (list == null) null
+      else JavaConversions.asScalaIterator(list.iterator()).map(Converter.fromJava[T, J]).toVector
     }
   }
 
   implicit def setToSetConverter[T, J](implicit converter: Converter[T, J]) = new Converter[Set[T], java.util.Set[J]] {
     import scala.collection.JavaConversions
 
-    def write(set: Set[T]): java.util.Set[J] = new java.util.HashSet(JavaConversions.setAsJavaSet(set.map(Converter.toJava[T, J])))
-    def read(set: java.util.Set[J]): Set[T] = JavaConversions.asScalaIterator(set.iterator()).map(Converter.fromJava[T, J]).toSet
+    def write(set: Set[T]): java.util.Set[J] = {
+      if (set == null) null
+      else new java.util.HashSet(JavaConversions.setAsJavaSet(set.map(Converter.toJava[T, J])))
+    }
+    def read(set: java.util.Set[J]): Set[T] = {
+      if (set == null) null
+      else JavaConversions.asScalaIterator(set.iterator()).map(Converter.fromJava[T, J]).toSet
+    }
   }
 
   implicit def optionToTypeConverter[T, J](implicit converter: Converter[T, J]) = new Converter[Option[T], J] {

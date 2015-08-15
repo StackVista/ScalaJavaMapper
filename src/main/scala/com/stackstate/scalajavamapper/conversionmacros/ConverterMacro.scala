@@ -36,12 +36,17 @@ class CodeGeneratorModule[C <: Context](override val c: C) extends FieldsConvert
           ..$converterFields
 
           def write(t: $tpeCaseClass): $tpeJavaClass = {
-            val javaObj = new $tpeJavaClass()
-            ..${fieldsConverter.javaSetterCalls}
-            javaObj
+            if (t == null) null
+              else {val javaObj = new $tpeJavaClass()
+              ..${fieldsConverter.javaSetterCalls}
+              javaObj
+            }
           }
 
-          def read(j: $tpeJavaClass): $tpeCaseClass = $companion(..${fieldsConverter.caseClassConstructorArgs})
+          def read(j: $tpeJavaClass): $tpeCaseClass = {
+            if (j == null) null
+            else $companion(..${fieldsConverter.caseClassConstructorArgs})
+          }
         }
       """
       }
@@ -53,7 +58,10 @@ class CodeGeneratorModule[C <: Context](override val c: C) extends FieldsConvert
         new JavaReader[$tpeCaseClass, $tpeJavaClass] {
           ..$converterFields
 
-          def read(j: $tpeJavaClass): $tpeCaseClass = $companion(..${fieldsConverter.caseClassConstructorArgs})
+          def read(j: $tpeJavaClass): $tpeCaseClass = {
+            if (j == null) null
+            else $companion(..${fieldsConverter.caseClassConstructorArgs})
+          }
         }
       """
       }
@@ -66,9 +74,12 @@ class CodeGeneratorModule[C <: Context](override val c: C) extends FieldsConvert
           ..$converterFields
 
           def write(t: $tpeCaseClass): $tpeJavaClass = {
-            val javaObj = new $tpeJavaClass()
-            ..${fieldsConverter.javaSetterCalls}
-            javaObj
+            if (t == null) null
+            else {
+              val javaObj = new $tpeJavaClass()
+              ..${fieldsConverter.javaSetterCalls}
+              javaObj
+            }
           }
         }
       """
