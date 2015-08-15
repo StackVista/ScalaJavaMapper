@@ -1,7 +1,6 @@
 package com.stackstate.scalajavamapper
 package conversionmacros
 
-import language.higherKinds
 import scala.reflect.macros.whitebox.Context
 
 object ConverterMacro {
