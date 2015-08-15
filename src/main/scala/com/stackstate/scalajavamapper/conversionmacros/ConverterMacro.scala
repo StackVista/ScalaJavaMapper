@@ -1,84 +1,100 @@
 package com.stackstate.scalajavamapper
 package conversionmacros
 
+import language.higherKinds
 import scala.reflect.macros.whitebox.Context
 
 object ConverterMacro {
+  def reader[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context)(customFieldMapping: c.Expr[(String, String)]*)(customFieldConverters: c.Expr[(String, CustomFieldConverter[_, _])]*): c.Expr[JavaReader[T, J]] = {
+    val generatorModule = new CodeGeneratorModule[c.type](c)
+    val generator = new generatorModule.ConverterGenerator[T, J](customFieldMapping, customFieldConverters)
+    generator.reader
+  }
+
+  def writer[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context)(customFieldMapping: c.Expr[(String, String)]*)(customFieldConverters: c.Expr[(String, CustomFieldConverter[_, _])]*): c.Expr[JavaWriter[T, J]] = {
+    val generatorModule = new CodeGeneratorModule[c.type](c)
+    val generator = new generatorModule.ConverterGenerator[T, J](customFieldMapping, customFieldConverters)
+    generator.writer
+  }
+
   def converter[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context)(customFieldMapping: c.Expr[(String, String)]*)(customFieldConverters: c.Expr[(String, CustomFieldConverter[_, _])]*): c.Expr[Converter[T, J]] = {
+    val generatorModule = new CodeGeneratorModule[c.type](c)
+    val generator = new generatorModule.ConverterGenerator[T, J](customFieldMapping, customFieldConverters)
+    generator.converter
+  }
+}
+
+class CodeGeneratorModule[C <: Context](override val c: C) extends FieldsConverterModule[C](c) {
+
+  class ConverterGenerator[T: c.WeakTypeTag, J: c.WeakTypeTag](customFieldMapping: Seq[c.Expr[(String, String)]], customFieldConverters: Seq[c.Expr[(String, CustomFieldConverter[_, _])]]) {
     import c.universe._
-    val tpeCaseClass = weakTypeOf[T]
-    val tpeJavaClass = weakTypeOf[J]
 
-    val fieldMapping = FieldMapping(c)(customFieldMapping)
-    val companion = tpeCaseClass.typeSymbol.companion
-    if (companion == NoSymbol) {
-      c.abort(c.enclosingPosition, s"No companion companion object found for case class ${tpeCaseClass}")
-    }
-
-    val customConvertersMapping = CustomConverterMapping.createMapping(c)(customFieldConverters)
-
-    val converterFields = customConvertersMapping.map {
-      case (name, converter: c.universe.Tree) =>
-        val converterName = TermName(s"${name}Converter")
-        q"""val $converterName = $converter"""
-    }
-
-    val (toJavaStatements, fromJavaParams) = scalaFields(c)(tpeCaseClass).map {
-      case (scalaFieldName, decodedFieldName, scalaFieldType) ⇒
-
-        val (javaGetterName, javaGetterType) = fieldMapping.javaGetter(c)(tpeJavaClass, decodedFieldName)
-
-        customConvertersMapping.get(decodedFieldName).map { converter =>
-          val converterName = TermName(s"${decodedFieldName}Converter")
-
-          val toJavaStatement: Tree =
-            if (converter.tpe <:< c.symbolOf[CustomFieldReadWriter[_,_]].toType) {
-              val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
-              q"""
-                this.$converterName.writer.foreach(writer =>
-                  javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName)(writer))
-                )
-              """
-            } else q""
-          val fromJavaExpression: Tree = q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)(this.$converterName.reader)"""
-          (toJavaStatement, fromJavaExpression)
-        }.getOrElse {
-          val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
-          val toJavaStatement: Tree =
-            q"""javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName))"""
-          val fromJavaExpression: Tree = q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)"""
-          (toJavaStatement, fromJavaExpression)
-        }
-    }.unzip
-
-    c.Expr[Converter[T, J]] {
-      q"""
+    def converter: c.Expr[Converter[T, J]] = {
+      c.Expr[Converter[T, J]] {
+        q"""
         new Converter[$tpeCaseClass, $tpeJavaClass] {
           ..$converterFields
 
           def write(t: $tpeCaseClass): $tpeJavaClass = {
             val javaObj = new $tpeJavaClass()
-            ..$toJavaStatements
+            ..${fieldsConverter.javaSetterCalls}
             javaObj
           }
 
-          def read(j: $tpeJavaClass): $tpeCaseClass = $companion(..$fromJavaParams)
+          def read(j: $tpeJavaClass): $tpeCaseClass = $companion(..${fieldsConverter.caseClassConstructorArgs})
         }
       """
+      }
     }
-  }
 
-  private def scalaFields(c: Context)(tpeCaseClass: c.universe.Type): List[(c.universe.TermName, String, c.universe.Type)] = {
-    import c.universe._
-    val fields = tpeCaseClass.decls.collectFirst {
-      case m: MethodSymbol if m.isPrimaryConstructor ⇒ m
-    }.get.paramLists.head
+    def reader: c.Expr[JavaReader[T, J]] = {
+      c.Expr[JavaReader[T, J]] {
+        q"""
+        new JavaReader[$tpeCaseClass, $tpeJavaClass] {
+          ..$converterFields
 
-    fields.map { field ⇒
-      val scalaFieldName = field.asTerm.name
-      val decodedFieldName = scalaFieldName.decodedName.toString
-      val scalaFieldType = tpeCaseClass.decl(scalaFieldName).typeSignature
-      (scalaFieldName, decodedFieldName, scalaFieldType)
+          def read(j: $tpeJavaClass): $tpeCaseClass = $companion(..${fieldsConverter.caseClassConstructorArgs})
+        }
+      """
+      }
+    }
+
+    def writer: c.Expr[JavaWriter[T, J]] = {
+      c.Expr[JavaWriter[T, J]] {
+        q"""
+        new JavaWriter[$tpeCaseClass, $tpeJavaClass] {
+          ..$converterFields
+
+          def write(t: $tpeCaseClass): $tpeJavaClass = {
+            val javaObj = new $tpeJavaClass()
+            ..${fieldsConverter.javaSetterCalls}
+            javaObj
+          }
+        }
+      """
+      }
+    }
+
+    private val tpeCaseClass = weakTypeOf[T]
+    private val tpeJavaClass = weakTypeOf[J]
+
+    private val fieldMapping = FieldMapping(c)(customFieldMapping)
+    private val customConverters = CustomConverterMapping.createMapping(c)(customFieldConverters)
+
+    private val converterFields = customConverters.map {
+      case (name, converter: c.universe.Tree) =>
+        val converterName = TermName(s"${name}Converter")
+        q"""val $converterName = $converter"""
+    }
+
+    private val fieldsConverter = new FieldsConverter(tpeCaseClass, tpeJavaClass, fieldMapping, customConverters)
+
+    private def companion = {
+      val companion = tpeCaseClass.typeSymbol.companion
+      if (companion == NoSymbol) {
+        c.abort(c.enclosingPosition, s"No companion companion object found for case class ${tpeCaseClass}")
+      }
+      companion
     }
   }
 }

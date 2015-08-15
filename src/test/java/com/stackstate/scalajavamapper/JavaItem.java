@@ -7,6 +7,15 @@ public class JavaItem {
   private List<String> list;
   private JavaPerson person = new JavaPerson();
 
+  public JavaItem() { }
+
+  public JavaItem(String name, double price, List<String> list, JavaPerson person) {
+    this.name = name;
+    this.price = price;
+    this.list = list;
+    this.person = person;
+  }
+
   public String getName() {
     return name;
   }

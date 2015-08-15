@@ -1,11 +1,13 @@
 package com.stackstate.scalajavamapper
 
-import com.stackstate.scalajavamapper.property.{ JavaProperty, JavaComponent }
+import java.util
+
+import property._
 import org.scalatest._
+import Converters._
+import Converter._
 
 class MacroTest extends WordSpecLike with Matchers {
-  import Converters._
-  import Converter._
 
   case class Person(name: String, age: Option[Int], set: Set[String])
   case class PersonSimple(age: Int)
@@ -19,6 +21,14 @@ class MacroTest extends WordSpecLike with Matchers {
   case class Component(property: Property)
 
   val inItem = Item("String", 1.0, List("a", "b"), Person("John", Some(10), Set("d", "e", "f")))
+
+  val inJavaPerson = new JavaPerson("test")
+  inJavaPerson.setAge(1)
+  inJavaPerson.setSet(new util.HashSet())
+  val javaList = new util.ArrayList[String]()
+  javaList.add("a")
+  javaList.add("b")
+  val inJavaItem = new JavaItem("String", 1.0d, javaList, inJavaPerson)
 
   "The converter macro" should {
     "convert a case class to a Java object" in {
@@ -110,6 +120,21 @@ class MacroTest extends WordSpecLike with Matchers {
 
     "convert base class with generic type" in {
 
+    }
+  }
+
+  "The reader macro" should {
+    "only be able to read from a Java object" in {
+      implicit val personReader = reader[Person, JavaPerson]()()
+      implicit val itemReader = reader[Item, JavaItem]()()
+
+      val newItem = fromJava[Item, JavaItem](inJavaItem)
+      newItem.list === inJavaItem.getList
+      newItem.name === inJavaItem.getName
+      newItem.price === inJavaItem.getPrice
+      newItem.person.name === inJavaPerson.getName
+      newItem.person.age === inJavaPerson.getAge
+      newItem.person.set === inJavaPerson.getSet
     }
   }
 }
