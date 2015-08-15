@@ -30,10 +30,21 @@ case class FieldMapping(mapping: Map[String, String]) {
   private def mapField(name: String): String = mapping.getOrElse(name, name)
 
   def javaGetter(c: Context)(tpeJavaClass: c.universe.Type, fieldName: String): (c.universe.TermName, c.universe.Type) = {
-    val getterName = s"get${mapField(fieldName).capitalize}"
-    val javaGetter = tpeJavaClass.members.find(_.asTerm.name.decodedName.toString == getterName).getOrElse(
-      c.abort(c.enclosingPosition, s"Getter $getterName not found on ${tpeJavaClass.typeSymbol.name}.")
-    )
+    val javaProperty: String = mapField(fieldName)
+
+    def matches(prefix: String)(member: c.universe.Symbol) = {
+      member.asTerm.name.decodedName.toString == s"$prefix${javaProperty.capitalize}"
+    }
+    def isGetter = matches("get")_
+    def isBooleanGetter(member: c.universe.Symbol) = {
+      member.typeSignature.resultType =:= c.symbolOf[Boolean].toType && matches("is")(member)
+    }
+
+    val javaGetter = tpeJavaClass.members.find(member => isGetter(member) || isBooleanGetter(member))
+      .getOrElse(
+        c.abort(c.enclosingPosition, s"Getter for property $javaProperty not found on ${tpeJavaClass.typeSymbol.name}.")
+      )
+
     val javaGetterName = javaGetter.asTerm.name
     val javaGetterType = javaGetter.typeSignature.resultType
     (javaGetterName, javaGetterType)

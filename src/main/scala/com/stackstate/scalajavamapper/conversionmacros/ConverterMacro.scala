@@ -32,7 +32,7 @@ object ConverterMacro {
           val converterName = TermName(s"${decodedFieldName}Converter")
 
           val toJavaStatement: Tree =
-            if (converter.tpe.typeSymbol.name.toString == CustomFieldReadWriter.getClass.getSimpleName) {
+            if (converter.tpe <:< c.symbolOf[CustomFieldReadWriter[_,_]].toType) {
               val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
               q"""
                 this.$converterName.writer.foreach(writer =>

@@ -13,6 +13,7 @@ class MacroTest extends WordSpecLike with Matchers {
 
   case class Item(name: String, price: Double, list: Seq[String], person: Person)
   case class ItemSimple(person: String)
+  case class BooleanItem(known: Boolean, familiar: Boolean)
 
   case class Property(name: String)
   case class Component(property: Property)
@@ -87,12 +88,24 @@ class MacroTest extends WordSpecLike with Matchers {
     "convert readonly properties without setter converter" in {
       implicit val personConverter = Converter.converter[PersonSimple, JavaPersonSimple]()("age" -> readOnlyField[Int, Integer](_.asInstanceOf[Integer]))
 
-      val dto = PersonSimple(0)
-      val domain = toJava[PersonSimple, JavaPersonSimple](dto)
-      domain.getAge === 1
+      val scalaPerson = PersonSimple(0)
+      val javaPerson = toJava[PersonSimple, JavaPersonSimple](scalaPerson)
+      javaPerson.getAge === 1
 
-      val returnDto = fromJava[PersonSimple, JavaPersonSimple](domain)
+      val returnDto = fromJava[PersonSimple, JavaPersonSimple](javaPerson)
       returnDto.age === 1
+    }
+
+    "convert boolean properties with 'is' getters" in {
+      implicit val converter = Converter.converter[BooleanItem, JavaBooleanItem]()()
+      val scalaItem = BooleanItem(true, false)
+      val javaItem = toJava[BooleanItem, JavaBooleanItem](scalaItem)
+
+      javaItem.isKnown === scalaItem.known
+      javaItem.getFamiliar === scalaItem.familiar
+
+      val outScalaItem = fromJava[BooleanItem, JavaBooleanItem](javaItem)
+      outScalaItem === scalaItem
     }
 
     "convert base class with generic type" in {
