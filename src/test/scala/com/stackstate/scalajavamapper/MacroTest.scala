@@ -20,6 +20,7 @@ class MacroTest extends WordSpecLike with Matchers {
   case class Item(name: String, price: Double, list: Seq[String], person: Person)
 
   case class ItemSimple(person: String)
+
   case class BooleanItem(known: Boolean, familiar: Boolean)
 
   case class Property(name: String)
@@ -149,4 +150,60 @@ class MacroTest extends WordSpecLike with Matchers {
       domain.getProperty.getName === "name"
     }
   }
+
+  "The reader macro" should {
+    "only be able to read from a Java object" in {
+      implicit val personReader = reader[Person, JavaPerson]()()
+      implicit val itemReader = reader[Item, JavaItem]()()
+
+      val newItem = fromJava[Item, JavaItem](inJavaItem)
+      newItem.list === inJavaItem.getList
+      newItem.name === inJavaItem.getName
+      newItem.price === inJavaItem.getPrice
+      newItem.person.name === inJavaPerson.getName
+      newItem.person.age === inJavaPerson.getAge
+      newItem.person.set === inJavaPerson.getSet
+
+      "toJava[Item, JavaItem](newItem)" shouldNot compile
+    }
+
+    "handle 'null' values gracefully" in {
+      implicit val perosnReader = reader[Person, JavaPerson]()()
+      implicit val itemReader = reader[Item, JavaItem]()()
+
+      val newItem = fromJava[Item, JavaItem](null)
+      newItem === null
+    }
+  }
+
+  "The writer macro" should {
+    val propertyConverter = Converter.converter[Property, JavaProperty]()()
+    "only be able to write to a Java object" in {
+      implicit val personWriter = writer[Person, JavaPerson]()()
+      implicit val itemWriter = writer[Item, JavaItem]()()
+
+      val javaItem = toJava[Item, JavaItem](inItem)
+      inItem.name === javaItem.getName
+      inItem.price === javaItem.getPrice
+      javaItem.getList should contain theSameElementsInOrderAs Vector("a", "b")
+      inItem.person.name === javaItem.getPerson.getName
+      inItem.person.age.get === javaItem.getPerson.getAge
+      javaItem.getPerson.getSet should contain theSameElementsAs Set("d", "e", "f")
+      implicit val componentConverter = Converter.converter[Component, JavaComponent]()(
+        "property" -> converterField[Property, JavaProperty](propertyConverter)
+      )
+
+      "fromJava[Item, JavaItem](javaItem)" shouldNot compile
+    }
+    val dto = Component(Property("name"))
+
+    "handle 'null' values gracefully" in {
+      implicit val personWriter = writer[Person, JavaPerson]()()
+      implicit val itemWriter = writer[Item, JavaItem]()()
+
+      val newItem = toJava[Item, JavaItem](null)
+      newItem === null
+    }
+  }
+
 }
