@@ -37,6 +37,7 @@ object Converter {
 
   def readOnlyField[T, J](read: J => T): CustomFieldReaderOnly[T, J] = CustomFieldReaderOnly[T, J](JavaReader(read))
   def readWriterField[T, J](read: J => T, write: T => J): CustomFieldReadWriter[T, J] = CustomFieldReadWriter[T, J](JavaReader(read), JavaWriter(write))
+  def converterField[T, J](converter: Converter[T, J]): CustomFieldReadWriter[T, J] = CustomFieldReadWriter[T, J](converter, converter)
 
   def toJava[T, J](t: T)(implicit converter: JavaWriter[T, J]): J = converter.write(t)
   def fromJava[T, J](j: J)(implicit converter: JavaReader[T, J]): T = converter.read(j)

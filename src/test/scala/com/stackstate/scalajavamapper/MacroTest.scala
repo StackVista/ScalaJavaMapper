@@ -8,16 +8,22 @@ import Converters._
 import Converter._
 
 class MacroTest extends WordSpecLike with Matchers {
+  import Converters._
+  import Converter._
 
   case class Person(name: String, age: Option[Int], set: Set[String])
+
   case class PersonSimple(age: Int)
+
   case class OtherPerson(fullName: String, age1: Int, settings: Set[String])
 
   case class Item(name: String, price: Double, list: Seq[String], person: Person)
+
   case class ItemSimple(person: String)
   case class BooleanItem(known: Boolean, familiar: Boolean)
 
   case class Property(name: String)
+
   case class Component(property: Property)
 
   val inItem = Item("String", 1.0, List("a", "b"), Person("John", Some(10), Set("d", "e", "f")))
@@ -130,57 +136,17 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert base class with generic type" in {
+      val propertyConverter = Converter.converter[Property, JavaProperty]()()
 
-    }
-  }
+      implicit val componentConverter = Converter.converter[Component, JavaComponent]()(
+        "property" -> converterField[Property, JavaProperty](propertyConverter)
+      )
 
-  "The reader macro" should {
-    "only be able to read from a Java object" in {
-      implicit val personReader = reader[Person, JavaPerson]()()
-      implicit val itemReader = reader[Item, JavaItem]()()
+      val dto = Component(Property("name"))
 
-      val newItem = fromJava[Item, JavaItem](inJavaItem)
-      newItem.list === inJavaItem.getList
-      newItem.name === inJavaItem.getName
-      newItem.price === inJavaItem.getPrice
-      newItem.person.name === inJavaPerson.getName
-      newItem.person.age === inJavaPerson.getAge
-      newItem.person.set === inJavaPerson.getSet
+      val domain = toJava[Component, JavaComponent](dto)
 
-      "toJava[Item, JavaItem](newItem)" shouldNot compile
-    }
-
-    "handle 'null' values gracefully" in {
-      implicit val perosnReader = reader[Person, JavaPerson]()()
-      implicit val itemReader = reader[Item, JavaItem]()()
-
-      val newItem = fromJava[Item, JavaItem](null)
-      newItem === null
-    }
-  }
-
-  "The writer macro" should {
-    "only be able to write to a Java object" in {
-      implicit val personWriter = writer[Person, JavaPerson]()()
-      implicit val itemWriter = writer[Item, JavaItem]()()
-
-      val javaItem = toJava[Item, JavaItem](inItem)
-      inItem.name === javaItem.getName
-      inItem.price === javaItem.getPrice
-      javaItem.getList should contain theSameElementsInOrderAs Vector("a", "b")
-      inItem.person.name === javaItem.getPerson.getName
-      inItem.person.age.get === javaItem.getPerson.getAge
-      javaItem.getPerson.getSet should contain theSameElementsAs Set("d", "e", "f")
-
-      "fromJava[Item, JavaItem](javaItem)" shouldNot compile
-    }
-
-    "handle 'null' values gracefully" in {
-      implicit val personWriter = writer[Person, JavaPerson]()()
-      implicit val itemWriter = writer[Item, JavaItem]()()
-
-      val newItem = toJava[Item, JavaItem](null)
-      newItem === null
+      domain.getProperty.getName === "name"
     }
   }
 }

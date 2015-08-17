@@ -1,6 +1,11 @@
 package com.stackstate.scalajavamapper.property;
 
-public class JavaProperty  extends JavaBaseProperty {
+public class JavaProperty extends JavaBaseProperty {
+    public JavaProperty(String name){
+        this.name = name;
+    }
+    public JavaProperty(){
+    }
     private String name;
 
     public String getName() {

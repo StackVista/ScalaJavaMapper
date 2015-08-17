@@ -16,14 +16,14 @@ class FieldsConverterModule[C <: Context](val c: C) {
         customConvertersMapping.get(decodedFieldName).map { converter =>
           val converterName = TermName(s"${decodedFieldName}Converter")
 
-          if (converter.tpe <:< c.symbolOf[CustomFieldReadWriter[_, _]].toType) {
+          if (converter.tpe.typeConstructor <:< c.symbolOf[CustomFieldReadWriter[_, _]].toType.typeConstructor) {
             val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
             q"""
-              this.$converterName.writer.foreach(writer =>
-                javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName)(writer))
-              )
+              javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName)(this.$converterName.writer))
             """
-          } else q""
+          } else {
+            q""""""
+          }
         }.getOrElse {
           val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
           q"""javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName))"""
