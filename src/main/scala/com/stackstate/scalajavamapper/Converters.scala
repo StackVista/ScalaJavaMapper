@@ -1,15 +1,22 @@
 package com.stackstate.scalajavamapper
 
 trait Converters {
-  implicit def baseTypesConverter[T <: Any] = new Converter[T, T] {
+  implicit def identityConverter[T <: Any] = new Converter[T, T] {
     def write(s: T) = s
     def read(j: T) = j
   }
 
-  implicit def baseNumberTypesConverter[T <: AnyVal, J <: Number] = new Converter[T, J] {
+  private def baseNumberTypesConverter[T <: AnyVal, J <: Number] = new Converter[T, J] {
     def write(s: T) = s.asInstanceOf[J]
     def read(j: J) = j.asInstanceOf[T]
   }
+
+  implicit val byteConverter = baseNumberTypesConverter[Byte, java.lang.Byte]
+  implicit val integerConverter = baseNumberTypesConverter[Int, java.lang.Integer]
+  implicit val longConverter = baseNumberTypesConverter[Long, java.lang.Long]
+  implicit val floatConverter = baseNumberTypesConverter[Float, java.lang.Float]
+  implicit val doubleConverter = baseNumberTypesConverter[Double, java.lang.Double]
+  implicit val charConverter = baseNumberTypesConverter[Char, java.lang.Character]
 
   implicit val booleanTypesConverter = new Converter[Boolean, java.lang.Boolean] {
     def write(s: Boolean) = s.asInstanceOf[java.lang.Boolean]
