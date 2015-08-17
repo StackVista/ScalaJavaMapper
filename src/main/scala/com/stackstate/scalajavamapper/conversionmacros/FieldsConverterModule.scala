@@ -45,7 +45,8 @@ class FieldsConverterModule[C <: Context](val c: C) {
     private def scalaFields(tpeCaseClass: c.universe.Type): List[(c.universe.TermName, String, c.universe.Type)] = {
       val fields = tpeCaseClass.decls.collectFirst {
         case m: MethodSymbol if m.isPrimaryConstructor ⇒ m
-      }.get.paramLists.head
+      }.getOrElse(c.abort(c.enclosingPosition, s"No constructor found. Maybe ${tpeCaseClass} is not a case class?"))
+        .paramLists.head
 
       fields.map { field ⇒
         val scalaFieldName = field.asTerm.name
