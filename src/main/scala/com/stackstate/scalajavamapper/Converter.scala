@@ -33,16 +33,18 @@ trait CustomFieldConverter[T, J]
 case class CustomFieldReaderOnly[T, J](reader: JavaReader[T, J]) extends CustomFieldConverter[T, J]
 case class CustomFieldReadWriter[T, J](reader: JavaReader[T, J], writer: JavaWriter[T, J]) extends CustomFieldConverter[T, J]
 
-object Converter {
 
-  def readOnlyField[T, J](read: J => T): CustomFieldReaderOnly[T, J] = CustomFieldReaderOnly[T, J](JavaReader(read))
-  def readWriterField[T, J](read: J => T, write: T => J): CustomFieldReadWriter[T, J] = CustomFieldReadWriter[T, J](JavaReader(read), JavaWriter(write))
-  def converterField[T, J](converter: Converter[T, J]): CustomFieldReadWriter[T, J] = CustomFieldReadWriter[T, J](converter, converter)
+trait Mapper[BaseT, BaseJ] {
+  def readOnlyField[T <: BaseT, J <: BaseJ](read: J => T): CustomFieldReaderOnly[T, J] = CustomFieldReaderOnly[T, J](JavaReader(read))
+  def readWriterField[T <: BaseT, J <: BaseJ](read: J => T, write: T => J): CustomFieldReadWriter[T, J] = CustomFieldReadWriter[T, J](JavaReader(read), JavaWriter(write))
+  def converterField[T <: BaseT, J <: BaseJ](converter: Converter[T, J]): CustomFieldReadWriter[T, J] = CustomFieldReadWriter[T, J](converter, converter)
 
-  def toJava[T, J](t: T)(implicit converter: JavaWriter[T, J]): J = converter.write(t)
-  def fromJava[T, J](j: J)(implicit converter: JavaReader[T, J]): T = converter.read(j)
+  def toJava[T <: BaseT, J <: BaseJ](t: T)(implicit converter: JavaWriter[T, J]): J = converter.write(t)
+  def fromJava[T <: BaseT, J <: BaseJ](j: J)(implicit converter: JavaReader[T, J]): T = converter.read(j)
 
-  def converter[T, J](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): Converter[T, J] = macro ConverterMacro.converter[T, J]
-  def reader[T, J](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): JavaReader[T, J] = macro ConverterMacro.reader[T, J]
-  def writer[T, J](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): JavaWriter[T, J] = macro ConverterMacro.writer[T, J]
+  def createConverter[T <: BaseT, J <: BaseJ](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): Converter[T, J] = macro ConverterMacro.converter[T, J]
+  def createReader[T <: BaseT, J <: BaseJ](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): JavaReader[T, J] = macro ConverterMacro.reader[T, J]
+  def createWriter[T <: BaseT, J <: BaseJ](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): JavaWriter[T, J] = macro ConverterMacro.writer[T, J]
 }
+
+object Mapper extends Mapper[Any, Any]

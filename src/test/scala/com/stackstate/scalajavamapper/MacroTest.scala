@@ -5,11 +5,11 @@ import java.util
 import property._
 import org.scalatest._
 import Converters._
-import Converter._
+import Mapper._
 
 class MacroTest extends WordSpecLike with Matchers {
   import Converters._
-  import Converter._
+  import Mapper._
 
   case class Person(name: String, age: Option[Int], set: Set[String])
 
@@ -39,8 +39,8 @@ class MacroTest extends WordSpecLike with Matchers {
 
   "The converter macro" should {
     "convert a case class to a Java object" in {
-      implicit val personConverter = converter[Person, JavaPerson]()()
-      implicit val itemConverter = converter[Item, JavaItem]()()
+      implicit val personConverter = createConverter[Person, JavaPerson]()()
+      implicit val itemConverter = createConverter[Item, JavaItem]()()
 
       val javaItem = toJava[Item, JavaItem](inItem)
       inItem.name === javaItem.getName
@@ -55,7 +55,7 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert and map field names to other field names if provided" in {
-      implicit val personConverter = converter[OtherPerson, JavaPerson](
+      implicit val personConverter = createConverter[OtherPerson, JavaPerson](
         "fullName" -> "name", "age1" -> "age", "settings" -> "set"
       )()
 
@@ -71,11 +71,11 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert nested properties with the specified custom converters" in {
-      implicit val personConverter = converter[Person, JavaPerson]()()
-      implicit val itemConverter = converter[Item, JavaItem]()()
+      implicit val personConverter = createConverter[Person, JavaPerson]()()
+      implicit val itemConverter = createConverter[Item, JavaItem]()()
       val javaItem = toJava[Item, JavaItem](inItem)
 
-      implicit val simpleItemConverter = converter[ItemSimple, JavaItem]()(
+      implicit val simpleItemConverter = createConverter[ItemSimple, JavaItem]()(
         "person" -> readWriterField[String, JavaPerson](_.getName, personName => new JavaPerson(personName))
       )
 
@@ -87,11 +87,11 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert nested properties with the specified readonly converter" in {
-      implicit val personConverter = converter[Person, JavaPerson]()()
-      implicit val itemConverter = converter[Item, JavaItem]()()
+      implicit val personConverter = createConverter[Person, JavaPerson]()()
+      implicit val itemConverter = createConverter[Item, JavaItem]()()
       val javaItem = toJava[Item, JavaItem](inItem)
 
-      implicit val simpleItemConverter = converter[ItemSimple, JavaItem]()(
+      implicit val simpleItemConverter = createConverter[ItemSimple, JavaItem]()(
         "person" -> readOnlyField((_: JavaPerson).getName)
       )
 
@@ -103,7 +103,7 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert readonly properties without setter converter" in {
-      implicit val personConverter = converter[PersonSimple, JavaPersonSimple]()("age" -> readOnlyField[Int, Integer](_.asInstanceOf[Integer]))
+      implicit val personConverter = createConverter[PersonSimple, JavaPersonSimple]()("age" -> readOnlyField[Int, Integer](_.asInstanceOf[Integer]))
 
       val scalaPerson = PersonSimple(0)
       val javaPerson = toJava[PersonSimple, JavaPersonSimple](scalaPerson)
@@ -114,7 +114,7 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert boolean properties with 'is' getters" in {
-      implicit val boolItemConverter = converter[BooleanItem, JavaBooleanItem]()()
+      implicit val boolItemConverter = createConverter[BooleanItem, JavaBooleanItem]()()
       val scalaItem = BooleanItem(true, false)
       val javaItem = toJava[BooleanItem, JavaBooleanItem](scalaItem)
 
@@ -126,8 +126,8 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "handle 'null' values gracefully" in {
-      implicit val personConverter = converter[Person, JavaPerson]()()
-      implicit val itemConverter = converter[Item, JavaItem]()()
+      implicit val personConverter = createConverter[Person, JavaPerson]()()
+      implicit val itemConverter = createConverter[Item, JavaItem]()()
 
       val javaItem = toJava[Item, JavaItem](null)
       javaItem === null
@@ -137,9 +137,9 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert base class with generic type" in {
-      val propertyConverter = Converter.converter[Property, JavaProperty]()()
+      val propertyConverter = createConverter[Property, JavaProperty]()()
 
-      implicit val componentConverter = Converter.converter[Component, JavaComponent]()(
+      implicit val componentConverter = createConverter[Component, JavaComponent]()(
         "property" -> converterField[Property, JavaProperty](propertyConverter)
       )
 
@@ -153,8 +153,8 @@ class MacroTest extends WordSpecLike with Matchers {
 
   "The reader macro" should {
     "only be able to read from a Java object" in {
-      implicit val personReader = reader[Person, JavaPerson]()()
-      implicit val itemReader = reader[Item, JavaItem]()()
+      implicit val personReader = createReader[Person, JavaPerson]()()
+      implicit val itemReader = createReader[Item, JavaItem]()()
 
       val newItem = fromJava[Item, JavaItem](inJavaItem)
       newItem.list === inJavaItem.getList
@@ -168,8 +168,8 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "handle 'null' values gracefully" in {
-      implicit val perosnReader = reader[Person, JavaPerson]()()
-      implicit val itemReader = reader[Item, JavaItem]()()
+      implicit val perosnReader = createReader[Person, JavaPerson]()()
+      implicit val itemReader = createReader[Item, JavaItem]()()
 
       val newItem = fromJava[Item, JavaItem](null)
       newItem === null
@@ -177,10 +177,10 @@ class MacroTest extends WordSpecLike with Matchers {
   }
 
   "The writer macro" should {
-    val propertyConverter = Converter.converter[Property, JavaProperty]()()
+    val propertyConverter = createConverter[Property, JavaProperty]()()
     "only be able to write to a Java object" in {
-      implicit val personWriter = writer[Person, JavaPerson]()()
-      implicit val itemWriter = writer[Item, JavaItem]()()
+      implicit val personWriter = createWriter[Person, JavaPerson]()()
+      implicit val itemWriter = createWriter[Item, JavaItem]()()
 
       val javaItem = toJava[Item, JavaItem](inItem)
       inItem.name === javaItem.getName
@@ -189,7 +189,7 @@ class MacroTest extends WordSpecLike with Matchers {
       inItem.person.name === javaItem.getPerson.getName
       inItem.person.age.get === javaItem.getPerson.getAge
       javaItem.getPerson.getSet should contain theSameElementsAs Set("d", "e", "f")
-      implicit val componentConverter = Converter.converter[Component, JavaComponent]()(
+      implicit val componentConverter = createConverter[Component, JavaComponent]()(
         "property" -> converterField[Property, JavaProperty](propertyConverter)
       )
 
@@ -198,8 +198,8 @@ class MacroTest extends WordSpecLike with Matchers {
     val dto = Component(Property("name"))
 
     "handle 'null' values gracefully" in {
-      implicit val personWriter = writer[Person, JavaPerson]()()
-      implicit val itemWriter = writer[Item, JavaItem]()()
+      implicit val personWriter = createWriter[Person, JavaPerson]()()
+      implicit val itemWriter = createWriter[Item, JavaItem]()()
 
       val newItem = toJava[Item, JavaItem](null)
       newItem === null
