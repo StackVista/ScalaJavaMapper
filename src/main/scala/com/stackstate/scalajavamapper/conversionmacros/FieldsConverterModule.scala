@@ -26,7 +26,7 @@ class FieldsConverterModule[C <: Context](val c: C) {
           }
         }.getOrElse {
           val (javaSetterName, javaSetterType) = fieldMapping.javaSetter(c)(tpeJavaClass, decodedFieldName)
-          q"""javaObj.$javaSetterName(com.stackstate.scalajavamapper.Converter.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName))"""
+          q"""javaObj.$javaSetterName(com.stackstate.scalajavamapper.Mapper.toJava[$scalaFieldType, $javaSetterType](t.$scalaFieldName))"""
         }
     }
 
@@ -38,7 +38,7 @@ class FieldsConverterModule[C <: Context](val c: C) {
           val converterName = TermName(s"${decodedFieldName}Converter")
           q"""this.$converterName.reader.read(j.$javaGetterName)"""
         }.getOrElse {
-          q"""com.stackstate.scalajavamapper.Converter.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)"""
+          q"""com.stackstate.scalajavamapper.Mapper.fromJava[$scalaFieldType, $javaGetterType](j.$javaGetterName)"""
         }
     }
 

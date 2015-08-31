@@ -28,7 +28,7 @@ trait Converters {
 
     def read(list: java.util.List[J]): Seq[T] = {
       if (list == null) null
-      else JavaConversions.asScalaIterator(list.iterator()).map(Converter.fromJava[T, J]).toVector
+      else JavaConversions.asScalaIterator(list.iterator()).map(Mapper.fromJava[T, J]).toVector
     }
   }
 
@@ -38,7 +38,7 @@ trait Converters {
     // Make sure that a copy is made of the lists instead of wrapping the existing list
     def write(list: Seq[T]): java.util.List[J] = {
       if (list == null) null
-      else new java.util.ArrayList(JavaConversions.seqAsJavaList(list.map(Converter.toJava[T, J])))
+      else new java.util.ArrayList(JavaConversions.seqAsJavaList(list.map(Mapper.toJava[T, J])))
     }
   }
 
@@ -47,7 +47,7 @@ trait Converters {
 
     def read(set: java.util.Set[J]): Set[T] = {
       if (set == null) null
-      else JavaConversions.asScalaIterator(set.iterator()).map(Converter.fromJava[T, J]).toSet
+      else JavaConversions.asScalaIterator(set.iterator()).map(Mapper.fromJava[T, J]).toSet
     }
   }
 
@@ -56,16 +56,16 @@ trait Converters {
 
     def write(set: Set[T]): java.util.Set[J] = {
       if (set == null) null
-      else new java.util.HashSet(JavaConversions.setAsJavaSet(set.map(Converter.toJava[T, J])))
+      else new java.util.HashSet(JavaConversions.setAsJavaSet(set.map(Mapper.toJava[T, J])))
     }
   }
 
   implicit def optionToTypeReader[T, J](implicit reader: JavaReader[T, J]) = new JavaReader[Option[T], J] {
-    def read(value: J): Option[T] = Option(value).map(Converter.fromJava[T, J])
+    def read(value: J): Option[T] = Option(value).map(Mapper.fromJava[T, J])
   }
 
   implicit def optionToTypeWriter[T, J](implicit converter: JavaWriter[T, J]) = new JavaWriter[Option[T], J] {
-    def write(option: Option[T]): J = option.map(Converter.toJava[T, J]).getOrElse(null.asInstanceOf[J])
+    def write(option: Option[T]): J = option.map(Mapper.toJava[T, J]).getOrElse(null.asInstanceOf[J])
   }
 }
 
