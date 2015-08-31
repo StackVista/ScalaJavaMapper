@@ -6,7 +6,7 @@ trait Converters {
     def read(j: T) = j
   }
 
-  private def baseNumberTypesConverter[T <: AnyVal, J <: Number] = new Converter[T, J] {
+  private def baseNumberTypesConverter[T <: AnyVal, J] = new Converter[T, J] {
     def write(s: T) = s.asInstanceOf[J]
     def read(j: J) = j.asInstanceOf[T]
   }

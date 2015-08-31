@@ -33,7 +33,6 @@ trait CustomFieldConverter[T, J]
 case class CustomFieldReaderOnly[T, J](reader: JavaReader[T, J]) extends CustomFieldConverter[T, J]
 case class CustomFieldReadWriter[T, J](reader: JavaReader[T, J], writer: JavaWriter[T, J]) extends CustomFieldConverter[T, J]
 
-
 trait Mapper[BaseT, BaseJ] {
   def readOnlyField[T <: BaseT, J <: BaseJ](read: J => T): CustomFieldReaderOnly[T, J] = CustomFieldReaderOnly[T, J](JavaReader(read))
   def readWriterField[T <: BaseT, J <: BaseJ](read: J => T, write: T => J): CustomFieldReadWriter[T, J] = CustomFieldReadWriter[T, J](JavaReader(read), JavaWriter(write))
