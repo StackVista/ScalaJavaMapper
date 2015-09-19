@@ -1,6 +1,6 @@
 package com.stackstate.scalajavamapper.conversionmacros
 
-import scala.reflect.macros.whitebox.Context
+import scala.reflect.macros.blackbox.Context
 
 object FieldMapping {
 

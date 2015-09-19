@@ -27,6 +27,8 @@ class MacroTest extends WordSpecLike with Matchers {
 
   case class Component(property: Property)
 
+  class NoCaseClass(val name: String) {}
+
   val inItem = Item("String", 1.0, List("a", "b"), Person("John", Some(10), Set("d", "e", "f")))
 
   val inJavaPerson = new JavaPerson("test")
@@ -134,6 +136,10 @@ class MacroTest extends WordSpecLike with Matchers {
 
       val newItem = fromJava[Item, JavaItem](null)
       newItem === null
+    }
+
+    "give a compilation error if the Scala class is not a case class" in {
+      "val personConverter = createConverter[NoCaseClass, JavaPerson]()()" shouldNot compile
     }
 
     "convert base class with generic type" in {

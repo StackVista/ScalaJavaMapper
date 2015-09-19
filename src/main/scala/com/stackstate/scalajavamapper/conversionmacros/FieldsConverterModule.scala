@@ -1,7 +1,7 @@
 package com.stackstate.scalajavamapper
 package conversionmacros
 
-import scala.reflect.macros.whitebox.Context
+import scala.reflect.macros.blackbox.Context
 
 class FieldsConverterModule[C <: Context](val c: C) {
   import c.universe._

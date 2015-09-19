@@ -1,7 +1,7 @@
 package com.stackstate.scalajavamapper
 package conversionmacros
 
-import scala.reflect.macros.whitebox.Context
+import scala.reflect.macros.blackbox.Context
 
 object ConverterMacro {
   def reader[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context)(customFieldMapping: c.Expr[(String, String)]*)(customFieldConverters: c.Expr[(String, CustomFieldConverter[_, _])]*): c.Expr[JavaReader[T, J]] = {
@@ -88,6 +88,8 @@ class CodeGeneratorModule[C <: Context](override val c: C) extends FieldsConvert
     private val tpeCaseClass = weakTypeOf[T]
     private val tpeJavaClass = weakTypeOf[J]
 
+    ensureCaseClass(tpeCaseClass)
+
     private val fieldMapping = FieldMapping(c)(customFieldMapping)
     private val customConverters = CustomConverterMapping.createMapping(c)(customFieldConverters)
 
@@ -106,5 +108,7 @@ class CodeGeneratorModule[C <: Context](override val c: C) extends FieldsConvert
       }
       companion
     }
+
+    private def ensureCaseClass(tpe: Type) = if (!tpe.typeSymbol.asClass.isCaseClass) c.abort(c.enclosingPosition, s"$tpe is not a case class.")
   }
 }

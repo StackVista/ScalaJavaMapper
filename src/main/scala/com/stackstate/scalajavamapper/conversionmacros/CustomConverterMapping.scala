@@ -1,7 +1,7 @@
 package com.stackstate.scalajavamapper
 package conversionmacros
 
-import scala.reflect.macros.whitebox.Context
+import scala.reflect.macros.blackbox.Context
 
 object CustomConverterMapping {
   def createMapping(c: Context)(customConverterMapping: Seq[c.Expr[(String, CustomFieldConverter[_, _])]]): Map[String, c.universe.Tree] = {
