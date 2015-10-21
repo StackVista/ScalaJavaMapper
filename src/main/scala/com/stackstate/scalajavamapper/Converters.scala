@@ -67,6 +67,14 @@ trait Converters {
   implicit def optionToTypeWriter[T, J](implicit converter: JavaWriter[T, J]) = new JavaWriter[Option[T], J] {
     def write(option: Option[T]): J = option.map(Mapper.toJava[T, J]).getOrElse(null.asInstanceOf[J])
   }
+
+  implicit def optionToOptionalReader[T, J](implicit reader: JavaReader[T, J]) = new JavaReader[Option[T], java.util.Optional[J]] {
+    def read(value: java.util.Optional[J]): Option[T] = Option(value.orElse(null.asInstanceOf[J])).map(Mapper.fromJava[T, J])
+  }
+
+  implicit def optionToOptionalWriter[T, J](implicit converter: JavaWriter[T, J]) = new JavaWriter[Option[T], java.util.Optional[J]] {
+    def write(option: Option[T]): java.util.Optional[J] = java.util.Optional.ofNullable(option.map(Mapper.toJava[T, J]).getOrElse(null.asInstanceOf[J]))
+  }
 }
 
 object Converters extends Converters
