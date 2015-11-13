@@ -1,3 +1,4 @@
+import sbt.Credentials
 import sbt.Keys._
 import scalariform.formatter.preferences._
 
@@ -9,7 +10,9 @@ val scalaSettings = Seq(
 val projectSettings = Seq(
   name := "scala-java-mapper",
   organization := "com.stackstate",
-  version := "0.0.2-SNAPSHOT"
+  version := "0.0.2-SNAPSHOT",
+  publishTo := Some("Artifactory Realm" at "http://192.168.2.58:8081/artifactory/libs-snapshot-local"),
+  credentials += Credentials(Path.userHome / ".sbt" / "artifactory.credentials")
 )
 
 val dependencies = {
