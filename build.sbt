@@ -13,7 +13,7 @@ val projectSettings = Seq(
   version := {
     import scala.collection.JavaConversions._
     val git = new org.eclipse.jgit.api.Git(new org.eclipse.jgit.storage.file.FileRepositoryBuilder().findGitDir(baseDirectory.value).build)
-    git.getRepository.getBranch.toLowerCase + "-" + git.log().call().toList.length + "-" + git.getRepository.resolve("HEAD").abbreviate(7).name()
+    sys.props.getOrElse("bamboo_repository_git_branch", git.getRepository.getBranch).toLowerCase + "-" + git.log().call().toList.length + "-" + git.getRepository.resolve("HEAD").abbreviate(7).name()
   },
   publishTo := Some("Artifactory Realm" at "http://54.194.173.64/artifactory/libs"),
   credentials += Credentials(Path.userHome / ".sbt" / "artifactory.credentials")
