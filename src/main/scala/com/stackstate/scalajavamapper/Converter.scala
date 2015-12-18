@@ -6,23 +6,32 @@ import com.stackstate.scalajavamapper.conversionmacros.AutoConverterMacro
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
 
+@implicitNotFound("Required JavaWriter from scala type ${T} to java type ${J} not found.")
 trait JavaWriter[T, J] {
   def write(t: T): J
 }
 
+@implicitNotFound("Required JavaReader from scala type ${T} to java type ${J} not found.")
 trait JavaReader[T, J] {
   def read(j: J): T
 }
 
 object JavaReader {
-  def apply[T, J](f: J => T) = new JavaReader[T, J] {
+  def apply[T, J](f: J => T): JavaReader[T, J] = new JavaReader[T, J] {
     override def read(j: J): T = f(j)
   }
 }
 
 object JavaWriter {
-  def apply[T, J](f: T => J) = new JavaWriter[T, J] {
+  def apply[T, J](f: T => J): JavaWriter[T,J] = new JavaWriter[T, J] {
     override def write(t: T): J = f(t)
+  }
+}
+
+object Converter {
+  def apply[T, J](write: T => J, read: J => T): Converter[T, J] = new Converter[T, J] {
+    override def write(t: T): J = write(t)
+    override def read(j: J): T = read(j)
   }
 }
 

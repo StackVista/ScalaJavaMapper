@@ -1,4 +1,5 @@
 package com.stackstate.scalajavamapper
+import scala.collection.JavaConversions
 
 trait Converters {
   implicit def identityConverter[T <: Any] = new Converter[T, T] {
@@ -23,58 +24,44 @@ trait Converters {
     def read(j: java.lang.Boolean) = j.asInstanceOf[Boolean]
   }
 
-  implicit def seqToListReader[T, J](implicit reader: JavaReader[T, J]) = new JavaReader[Seq[T], java.util.List[J]] {
-    import scala.collection.JavaConversions
-
-    def read(list: java.util.List[J]): Seq[T] = {
+  implicit def seqToListReader[T, J](implicit reader: JavaReader[T, J]) =
+    JavaReader[Seq[T], java.util.List[J]] { (list: java.util.List[J]) =>
       if (list == null) null
       else JavaConversions.asScalaIterator(list.iterator()).map(Mapper.fromJava[T, J]).toVector
     }
-  }
 
-  implicit def seqToListWriter[T, J](implicit writer: JavaWriter[T, J]) = new JavaWriter[Seq[T], java.util.List[J]] {
-    import scala.collection.JavaConversions
-
-    // Make sure that a copy is made of the lists instead of wrapping the existing list
-    def write(list: Seq[T]): java.util.List[J] = {
+  implicit def seqToListWriter[T, J](implicit writer: JavaWriter[T, J]) =
+    JavaWriter[Seq[T], java.util.List[J]] { (list: Seq[T]) =>
       if (list == null) null
       else new java.util.ArrayList(JavaConversions.seqAsJavaList(list.map(Mapper.toJava[T, J])))
     }
-  }
 
-  implicit def setToSetReader[T, J](implicit reader: JavaReader[T, J]) = new JavaReader[Set[T], java.util.Set[J]] {
-    import scala.collection.JavaConversions
-
-    def read(set: java.util.Set[J]): Set[T] = {
+  implicit def setToSetReader[T, J](implicit reader: JavaReader[T, J]) =
+    JavaReader[Set[T], java.util.Set[J]] { (set: java.util.Set[J]) =>
       if (set == null) null
       else JavaConversions.asScalaIterator(set.iterator()).map(Mapper.fromJava[T, J]).toSet
+   }
+
+  implicit def setToSetWriter[T, J](implicit writer: JavaWriter[T, J]) = JavaWriter[Set[T], java.util.Set[J]] { (set: Set[T]) =>
+    if (set == null) null
+    else new java.util.HashSet(JavaConversions.setAsJavaSet(set.map(Mapper.toJava[T, J])))
+  }
+
+  implicit def optionToTypeReader[T, J](implicit reader: JavaReader[T, J]) =
+    JavaReader[Option[T], J](Option(_: J).map(Mapper.fromJava[T, J]))
+
+  implicit def optionToTypeWriter[T, J](implicit converter: JavaWriter[T, J]) =
+    JavaWriter[Option[T], J]((_: Option[T]).map(Mapper.toJava[T, J]).getOrElse(null.asInstanceOf[J]))
+
+  implicit def optionToOptionalReader[T, J](implicit reader: JavaReader[T, J]) =
+    JavaReader[Option[T], java.util.Optional[J]]{ (value: java.util.Optional[J]) =>
+      Option(value.orElse(null.asInstanceOf[J])).map(Mapper.fromJava[T, J])
     }
-  }
 
-  implicit def setToSetWriter[T, J](implicit writer: JavaWriter[T, J]) = new JavaWriter[Set[T], java.util.Set[J]] {
-    import scala.collection.JavaConversions
-
-    def write(set: Set[T]): java.util.Set[J] = {
-      if (set == null) null
-      else new java.util.HashSet(JavaConversions.setAsJavaSet(set.map(Mapper.toJava[T, J])))
+  implicit def optionToOptionalWriter[T, J](implicit converter: JavaWriter[T, J]) =
+    JavaWriter[Option[T], java.util.Optional[J]] { (option: Option[T]) =>
+      java.util.Optional.ofNullable(option.map(Mapper.toJava[T, J]).getOrElse(null.asInstanceOf[J]))
     }
-  }
-
-  implicit def optionToTypeReader[T, J](implicit reader: JavaReader[T, J]) = new JavaReader[Option[T], J] {
-    def read(value: J): Option[T] = Option(value).map(Mapper.fromJava[T, J])
-  }
-
-  implicit def optionToTypeWriter[T, J](implicit converter: JavaWriter[T, J]) = new JavaWriter[Option[T], J] {
-    def write(option: Option[T]): J = option.map(Mapper.toJava[T, J]).getOrElse(null.asInstanceOf[J])
-  }
-
-  implicit def optionToOptionalReader[T, J](implicit reader: JavaReader[T, J]) = new JavaReader[Option[T], java.util.Optional[J]] {
-    def read(value: java.util.Optional[J]): Option[T] = Option(value.orElse(null.asInstanceOf[J])).map(Mapper.fromJava[T, J])
-  }
-
-  implicit def optionToOptionalWriter[T, J](implicit converter: JavaWriter[T, J]) = new JavaWriter[Option[T], java.util.Optional[J]] {
-    def write(option: Option[T]): java.util.Optional[J] = java.util.Optional.ofNullable(option.map(Mapper.toJava[T, J]).getOrElse(null.asInstanceOf[J]))
-  }
 }
 
 object Converters extends Converters

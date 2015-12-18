@@ -4,8 +4,6 @@ import java.util
 
 import property._
 import org.scalatest._
-import Converters._
-import Mapper._
 
 class MacroTest extends WordSpecLike with Matchers {
   import Converters._
