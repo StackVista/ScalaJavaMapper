@@ -3,6 +3,26 @@ package conversionmacros
 
 import scala.reflect.macros.blackbox.Context
 
+object AutoConverterMacro {
+  def reader[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context): c.Expr[JavaReader[T, J]] = {
+    val generatorModule = new CodeGeneratorModule[c.type](c)
+    val generator = new generatorModule.ConverterGenerator[T, J](Seq.empty, Seq.empty)
+    generator.reader
+  }
+
+  def writer[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context): c.Expr[JavaWriter[T, J]] = {
+    val generatorModule = new CodeGeneratorModule[c.type](c)
+    val generator = new generatorModule.ConverterGenerator[T, J](Seq.empty, Seq.empty)
+    generator.writer
+  }
+
+  def converter[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context): c.Expr[Converter[T, J]] = {
+    val generatorModule = new CodeGeneratorModule[c.type](c)
+    val generator = new generatorModule.ConverterGenerator[T, J](Seq.empty, Seq.empty)
+    generator.converter
+  }
+}
+
 object ConverterMacro {
   def reader[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context)(customFieldMapping: c.Expr[(String, String)]*)(customFieldConverters: c.Expr[(String, CustomFieldConverter[_, _])]*): c.Expr[JavaReader[T, J]] = {
     val generatorModule = new CodeGeneratorModule[c.type](c)
