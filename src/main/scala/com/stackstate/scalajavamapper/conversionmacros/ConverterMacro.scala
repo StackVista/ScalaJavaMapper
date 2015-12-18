@@ -15,12 +15,6 @@ object AutoConverterMacro {
     val generator = new generatorModule.ConverterGenerator[T, J](Seq.empty, Seq.empty)
     generator.writer
   }
-
-  def converter[T: c.WeakTypeTag, J: c.WeakTypeTag](c: Context): c.Expr[Converter[T, J]] = {
-    val generatorModule = new CodeGeneratorModule[c.type](c)
-    val generator = new generatorModule.ConverterGenerator[T, J](Seq.empty, Seq.empty)
-    generator.converter
-  }
 }
 
 object ConverterMacro {
