@@ -16,6 +16,9 @@ trait JavaReader[T, J] {
   def read(j: J): T
 }
 
+@implicitNotFound("Required Converter from scala type ${T} to java type ${J} not found.")
+trait Converter[T, J] extends JavaWriter[T, J] with JavaReader[T, J]
+
 object JavaReader {
   def apply[T, J](f: J => T): JavaReader[T, J] = new JavaReader[T, J] {
     override def read(j: J): T = f(j)
@@ -34,9 +37,6 @@ object Converter {
     override def read(j: J): T = read(j)
   }
 }
-
-@implicitNotFound("Required Converter from scala type ${T} to java type ${J} not found.")
-trait Converter[T, J] extends JavaWriter[T, J] with JavaReader[T, J]
 
 trait CustomFieldConverter[T, J]
 
