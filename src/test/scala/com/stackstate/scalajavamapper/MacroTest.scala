@@ -6,7 +6,7 @@ import property._
 import org.scalatest._
 
 class MacroTest extends WordSpecLike with Matchers {
-  import Mapper._
+  import Converters._
 
   case class Person(name: String, age: Option[Int], set: Set[String])
 

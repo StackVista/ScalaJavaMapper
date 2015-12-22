@@ -1,10 +1,29 @@
 package com.stackstate.scalajavamapper
+
+import scala.language.experimental.macros
 import scala.collection.JavaConversions
 
-trait AutoConverters extends Converters with AutoMacroConverters { self : BaseMapper =>
+import com.stackstate.scalajavamapper.conversionmacros.ConverterMacro
+import com.stackstate.scalajavamapper.conversionmacros.AutoConverterMacro
+
+trait AutoConverters extends BaseTypeConverters with MacroConverters with AutoMacroConverters
+object AutoConverters extends AutoConverters
+
+trait Converters extends  BaseTypeConverters with MacroConverters
+object Converters extends Converters
+
+trait MacroConverters {
+  def createConverter[T <: Product, J](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): Converter[T, J] = macro ConverterMacro.converter[T, J]
+  def createReader[T  <: Product, J](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): JavaReader[T, J] = macro ConverterMacro.reader[T, J]
+  def createWriter[T  <: Product, J](customFieldMapping: (String, String)*)(customFieldConverters: (String, CustomFieldConverter[_, _])*): JavaWriter[T, J] = macro ConverterMacro.writer[T, J]
 }
 
-trait Converters { self : BaseMapper =>
+trait AutoMacroConverters {
+  implicit def autoCreateReader[T <: Product, J]: JavaReader[T, J] = macro AutoConverterMacro.reader[T, J]
+  implicit def autoCreateWriter[T <: Product, J]: JavaWriter[T, J] = macro AutoConverterMacro.writer[T, J]
+}
+
+trait BaseTypeConverters {
   implicit def identityConverter[T <: Any] = new Converter[T, T] {
     def write(s: T) = s
     def read(j: T) = j
