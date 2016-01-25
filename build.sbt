@@ -15,7 +15,7 @@ val projectSettings = Seq(
     val git = new org.eclipse.jgit.api.Git(new org.eclipse.jgit.storage.file.FileRepositoryBuilder().findGitDir(baseDirectory.value).build)
     sys.env.getOrElse("bamboo_repository_git_branch", git.getRepository.getBranch).toLowerCase + "-" + git.log().call().toList.length + "-" + git.getRepository.resolve("HEAD").abbreviate(7).name()
   },
-  publishTo := Some("Artifactory Realm" at "http://54.194.173.64/artifactory/libs"),
+  publishTo := Some("Artifactory Realm" at "http://52.48.46.185/artifactory/libs"),
   credentials += Credentials(Path.userHome / ".sbt" / "artifactory.credentials")
 )
 
