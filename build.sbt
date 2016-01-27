@@ -17,7 +17,7 @@ val projectSettings = Seq(
     sys.env.getOrElse("bamboo_repository_git_branch", git.getRepository.getBranch).toLowerCase + "-" + git.log().call().toList.length + "-" + git.getRepository.resolve("HEAD").abbreviate(7).name()
   },
   publishTo := Some("Artifactory Realm" at "http://52.48.46.185/artifactory/libs"),
-  credentials += Credentials(Path.userHome / ".sbt" / "artifactory.credentials"),
+  credentials += Credentials(Path.userHome / ".sbt" / "artifactory.credentials")
 )
 
 val dependencies = {
