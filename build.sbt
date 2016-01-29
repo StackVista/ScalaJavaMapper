@@ -3,7 +3,8 @@ import sbt.Keys._
 import scalariform.formatter.preferences._
 import com.typesafe.sbt.git._
 val scalaSettings = Seq(
-  scalaVersion := "2.11.7"
+  scalaVersion := "2.11.7",
+  isSnapshot := false
   //, scalacOptions += "-Ymacro-debug-lite"
 )
 
@@ -15,7 +16,7 @@ val projectSettings = Seq(
     val git = new org.eclipse.jgit.api.Git(new org.eclipse.jgit.storage.file.FileRepositoryBuilder().findGitDir(baseDirectory.value).build)
     sys.env.getOrElse("bamboo_repository_git_branch", git.getRepository.getBranch).toLowerCase + "-" + git.log().call().toList.length + "-" + git.getRepository.resolve("HEAD").abbreviate(7).name()
   },
-  publishTo := Some("Artifactory Realm" at "http://54.194.173.64/artifactory/libs"),
+  publishTo := Some("Artifactory Realm" at "http://52.48.46.185/artifactory/libs"),
   credentials += Credentials(Path.userHome / ".sbt" / "artifactory.credentials")
 )
 
@@ -35,7 +36,7 @@ val scalariform = scalariformSettings :+
     .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
   )
 
-lazy val root = 
+lazy val root =
   project.in(file("."))
   .enablePlugins(GitVersioning)
   .settings(projectSettings:_*)
@@ -43,4 +44,3 @@ lazy val root =
   .settings(scalariform)
   .settings(dependencies)
   .settings(compileOrder := CompileOrder.Mixed)
-
