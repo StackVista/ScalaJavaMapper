@@ -140,11 +140,8 @@ class MacroTest extends WordSpecLike with Matchers {
     }
 
     "convert base class with generic type" in {
-      val propertyConverter = createConverter[Property, JavaProperty]()()
-
-      implicit val componentConverter = createConverter[Component, JavaComponent]()(
-        "property" -> converterField[Property, JavaProperty](propertyConverter)
-      )
+      implicit val propertyConverter = createConverter[Property, JavaProperty]()()
+      implicit val componentConverter = createConverter[Component, JavaComponent]()()
 
       val dto = Component(Property("name"))
 

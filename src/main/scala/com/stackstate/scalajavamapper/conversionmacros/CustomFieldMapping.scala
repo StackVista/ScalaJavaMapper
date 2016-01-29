@@ -46,7 +46,7 @@ case class FieldMapping(mapping: Map[String, String]) {
       )
 
     val javaGetterName = javaGetter.asTerm.name
-    val javaGetterType = javaGetter.typeSignature.resultType
+    val javaGetterType = javaGetter.typeSignatureIn(tpeJavaClass).resultType
     (javaGetterName, javaGetterType)
   }
 
@@ -56,7 +56,7 @@ case class FieldMapping(mapping: Map[String, String]) {
       c.abort(c.enclosingPosition, s"Setter $setterName not found on ${tpeJavaClass.typeSymbol.name}.")
     )
     val javaSetterName = javaSetter.asTerm.name
-    val javaSetterParams = javaSetter.typeSignature.paramLists.head
+    val javaSetterParams = javaSetter.typeSignatureIn(tpeJavaClass).paramLists.head
     if (javaSetterParams.size != 1) {
       c.abort(c.enclosingPosition, s"Setter ${javaSetterName} requires exactly one parameter, found ${javaSetterParams.size}")
     }

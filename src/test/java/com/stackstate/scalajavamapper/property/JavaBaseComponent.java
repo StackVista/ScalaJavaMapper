@@ -1,7 +1,13 @@
 package com.stackstate.scalajavamapper.property;
 
 public abstract class JavaBaseComponent<T extends JavaBaseProperty> {
-    abstract T getProperty();
+    protected T property;
 
-    abstract void setProperty(T property);
+    public T getProperty() {
+      return property;
+    }
+
+    public void setProperty(T property) {
+      this.property = property;
+    }
 }
